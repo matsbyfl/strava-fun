@@ -1,6 +1,6 @@
 ## For å komme i gang med utvikling:
 
-1. git clone http://stash.devillo.no/scm/aura/vera.git
+1. git clone
 2. npm install
 3. if (!gulp.installed) npm install -g gulp
 4. export db_url=[mongo url] && export NODE_ENV=development && nodemon --debug --watch backend --watch server.js
