@@ -43,4 +43,5 @@ app-config/target
 dist
 
 frontend/build
+strava_config
 
