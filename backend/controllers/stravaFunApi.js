@@ -10,6 +10,11 @@ var moment = require('moment');
 
 var responseData = [];
 
+exports.health = function(req, res, next) {
+    res.writeHead(200);
+    res.end();
+}
+
 exports.activities = function (req, res, next) {
 
     var asyncTasks = [];
