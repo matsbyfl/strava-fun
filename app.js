@@ -53,8 +53,8 @@ app.use(errorHandler);
 //var httpsServer = https.createServer({key: fs.readFileSync(config.tlsPrivateKey), cert: fs.readFileSync(config.tlsCert)}, app);
 var httpServer = http.createServer(app);
 
-var port = env.NODE_PORT || 3000;
-var host = env.NODE_IP || 'localhost';
+var port = process.env.NODE_PORT || 3000;
+var host = process.env.NODE_IP || 'localhost';
 
 httpServer.listen(port, host, function () {
     console.log("Ready for monkey-business on with ${host}:${port} PID ${process.pid}")
