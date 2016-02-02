@@ -3,7 +3,7 @@ var path = require('path'),
 
 var config = {
     root: rootPath,
-    //port: process.env['PORT'] || 6969,
+    //:qport: process.env['PORT'] || 6969,
     //dbUrl: process.env['stravaFun_url'] || "mongodb://localhost/deploy_log",
     //dbUser: process.env['veraDb_username'] || "vera",
     //dbPassword: process.env['veraDb_password'] || "<hemmelig>",
