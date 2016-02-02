@@ -10,8 +10,9 @@
     "name": "Mats Rodney Harley Dennis Rikardo Byfuglien",
     "email": "mats.byfuglien@nav.no"
   },
+  "main": "start.js",
   "scripts": {
-    "test": "tape test/*.js | tap-spec"
+    "start": "node --use_strict start.js"
   },
   "engines": {
     "node": ">= 5.0.0"
