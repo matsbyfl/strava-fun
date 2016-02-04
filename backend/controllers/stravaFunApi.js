@@ -47,6 +47,7 @@ var getActivitiesForClub = function (club, callback) {
     strava.clubs.listActivities({id: club.id, per_page: 200}, function (err, payload) {
         if(err) {
             console.log("Err", err)
+            //TODO handle error
         }
         //console.log(payload.length);
 
