@@ -57,7 +57,8 @@ var port = process.env.NODE_PORT || 3000;
 var host = process.env.NODE_IP || 'localhost';
 
 httpServer.listen(port, host, function () {
-    console.log("Ready for monkey-business on with ${host}:${port} PID ${process.pid}")
+    console.log("strava key " + process.env.STRAVA_ACCESS_TOKEN)
+    console.log(`Ready for monkey-business on with ${host}:${port} PID ${process.pid}`)
 });
 
 module.exports = app;
