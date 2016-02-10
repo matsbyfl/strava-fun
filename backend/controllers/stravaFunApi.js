@@ -1,14 +1,10 @@
 var config = require("../config/config");
 var stravaClubs = require("../../data/strava_clubs").clubs;
-//var logger = require("../config/syslog");
-//var Event = require('../models/event');
 var jsonToCSV = require('json-csv');
 var _ = require('lodash');
 var async = require('async');
 var strava = require('strava-v3');
 var moment = require('moment');
-
-var responseData = [];
 
 exports.health = function(req, res, next) {
     res.writeHead(200);
@@ -16,7 +12,7 @@ exports.health = function(req, res, next) {
 }
 
 exports.activities = function (req, res, next) {
-
+    var responseData = [];
     var asyncTasks = [];
 
     stravaClubs.forEach(function (club) {
@@ -40,21 +36,21 @@ exports.activities = function (req, res, next) {
             res.json(responseData);
         }
     });
-}
 
-var getActivitiesForClub = function (club, callback) {
-    console.log("Calling strava for club " + club.name + "(" + club.id +  ")")
-    strava.clubs.listActivities({id: club.id, per_page: 200}, function (err, payload) {
-        if(err) {
-            console.log("Err", err)
+    function getActivitiesForClub (club, callback) {
+        console.log("Calling strava for club " + club.name + "(" + club.id +  ")")
+        strava.clubs.listActivities({id: club.id, per_page: 200}, function (err, payload) {
+            if(err) {
+                console.log("Err", err)
             //TODO handle error
-        }
-        //console.log(payload.length);
-
-        responseData.push({club: club.name, activities: mapActivities(payload)})
-        callback();
-    })
+            }
+            responseData.push({club: club.name, activities: mapActivities(payload)})
+            callback();
+        })
+    }
 }
+
+
 
 var mapActivities = function(stravaData) {
     return _.map(stravaData, function(activity) {
