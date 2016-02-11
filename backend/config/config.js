@@ -7,8 +7,6 @@ var config = {
     //dbUrl: process.env['stravaFun_url'] || "mongodb://localhost/deploy_log",
     //dbUser: process.env['veraDb_username'] || "vera",
     //dbPassword: process.env['veraDb_password'] || "<hemmelig>",
-    //tlsPrivateKey: process.env['TLS_PRIVATE_KEY'] || "private.key",
-    //tlsCert: process.env['TLS_CERT'] || "cacert.pem",
 }
 
 module.exports = config
