@@ -8,7 +8,7 @@ var Route = Router.Route;
 var Link = Router.Link;
 require('console-shim'); // IE9 FIX
 
-var Vera = React.createClass({
+var Autostrada = React.createClass({
 
     getInitialState: function () {
         return {}

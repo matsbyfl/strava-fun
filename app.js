@@ -2,7 +2,7 @@ var express = require('express');
 var bodyParser = require('body-parser');
 var dexter = require('morgan');
 var config = require('./backend/config/config');
-//var mongoose = require('mongoose');
+var mongoose = require('mongoose');
 var http = require('http');
 var app = express();
 
@@ -41,9 +41,19 @@ var errorHandler = function (err, req, res, next) {
 //mongoose.connect(config.dbUrl);
 //logger.log("Using MongoDB URL", config.dbUrl);
 
-//var db = mongoose.connection;
+var connectWithRetry = function() {
+    return mongoose.connect(config.dbUrl, {user: config.dbUser, pass: config.dbPassword}, function(err) {
+        if (err) {
+            console.error('Failed to connect to mongo on startup - retrying in 5 sec', err);
+            setTimeout(connectWithRetry, 5000);
+        }
+    });
+};
+connectWithRetry();
 
-//db.on('error', console.error.bind(console, 'connection error:'));
+var db = mongoose.connection;
+
+db.on('connected', function(){console.log('connected to', config.dbUrl)});
 
 app.use(logError);
 app.use(errorHandler);
