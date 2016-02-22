@@ -6,6 +6,7 @@ var async = require('async');
 var strava = require('strava-v3');
 var moment = require('moment');
 var Activity = require('../models/activity');
+const EventEmitter = require('events');
 
 exports.health = function (req, res, next) {
     res.writeHead(200);
@@ -44,15 +45,24 @@ exports.activities = function (req, res, next) {
     });
 
     function saveNewActivites(club, activities) {
+        var newEntries = 0;
         activities.forEach(activity => {
-            var a = new Activity({clubId: club.strava_id, clubName: club.name, stravaActivity: activity});
-            console.log("aa", a)
-            a.save(function (err, savedActivity) {
+            Activity.count({strava_club_id: club.strava_id, 'strava_activity.id': activity.id}, function (err, count) {
                 if(err) {
-                    console.log("Error saving activity", err)
+                    console.log(`Error checking if activity ${activity.id} already exists`);
                 }
-                else {
-                    console.log("Saved activity for ", club.name, savedActivity)
+                if(count > 1 ) {
+                    console.log(`This is weired, we have more than one document with strava id ${activity.id}`)
+                }
+                if(count === 0) {
+                    Activity.createActivity(club, activity).save(function (err, savedActivity) {
+                        if(err) {
+                            console.log("Error saving activity", err)
+                        }
+                        else {
+                            console.log("Saved activity for ", activity.id)
+                        }
+                    })
                 }
 
             })
@@ -62,11 +72,12 @@ exports.activities = function (req, res, next) {
 
     function getActivitiesForClub(club, callback) {
         console.log("Calling strava for club " + club.name + "(" + club.strava_id + ")");
-        strava.clubs.listActivities({id: club.strava_id, per_page: 1}, function (err, payload) {
+        strava.clubs.listActivities({id: club.strava_id, per_page: 200}, function (err, payload) {
             if (err) {
                 res.statusCode(500)
                 throw new Error(err);
             }
+            
             saveNewActivites(club, payload);
             responseData.push({
                 club,
