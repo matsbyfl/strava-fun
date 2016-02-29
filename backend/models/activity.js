@@ -16,7 +16,7 @@ var activitySchema = new Schema({
 
 activitySchema.statics.createActivity = function (club, activity) {
     return new Activity({
-        strava_club_id: club.strava_id,
+        strava_club_id: club.id,
         club_name: club.name,
         strava_activity: activity
     })

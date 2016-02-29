@@ -11,70 +11,85 @@ var Activity = require('../models/activity');
 const EventEmitter = require('events');
 
 
+function getClubs(res, callback) {
+    strava.athlete.listClubs({}, function (err, clubs) {
+        if (err) {
+            res.statusCode(500);
+            throw new Error(err);
+        }
+        callback(clubs)
+    })
+}
+
 exports.health = function (req, res, next) {
     res.writeHead(200);
     res.end();
 };
 
 exports.clubs = function (req, res, next) {
-    res.json(stravaClubs);
+    getClubs(res, function (clubs) {
+        res.header("Content-Type", "application/json; charset=utf-8");
+        res.json(clubs);
+    })
 }
 
 exports.activities = function (req, res, next) {
-    var responseData = [];
+
     var asyncTasks = [];
 
-    stravaClubs.filter(club => club.strava_id).forEach(function (club) {
-        asyncTasks.push(function (callback) {
-            getActivitiesForClub(club, callback)
-        });
-    });
-
-    async.parallel(asyncTasks, function () {
-        // use async to not call return response before db call and mapping is done
-        Activity.find({}, (err, activities) => {
-            if (err) {
-                res.statusCode(500)
-                throw new Error(err);
-            }
-
-            var byClub = _.groupBy(activities, act => {
-                return act['strava_club_id']
-            })
-
-            _.keys(byClub).forEach(clubId => {
-                var club = stravaClubs.filter(club => club.strava_id === clubId)
-                //console.log("asa", ala.strava_activity)
-                responseData.push({
-                    club,
-                    activities: mapActivities(byClub[clubId])
-                });
-                //byClub[clubId].forEach(ala => {
-
-                //})
-            })
+    getClubs(res, function (clubs) {
+        clubs.forEach(function (club) {
+            asyncTasks.push(function (callback) {
+                getActivitiesForClub(club, callback)
+            });
         })
 
-        eventhandler.emit("stravaApiCallsDone")
+        async.parallel(asyncTasks, function () {
+            var responseData = [];
+            // use async to not call return response before db call and mapping is done
+            console.log("done calling strava, now mongo time")
+            Activity.find({}, (err, activities) => {
+                if (err) {
+                    res.statusCode(500)
+                    throw new Error(err);
+                }
 
-        if (req.query.csv === 'true') {
-            var a = responseData.map(function (club) {
-                return club.activities.map(function (activity) {
-                    return {club: club.club, activity}
+                var activitiesByClub = _.groupBy(activities, act => {
+                    return act['strava_club_id']
                 })
-            });
-            returnCSVPayload(res, _.flatten(a));
-        }
-        else {
-            res.header("Content-Type", "application/json; charset=utf-8");
-            console.log("returning", responseData.length)
-            res.json(responseData);
-        }
+
+                _.keys(activitiesByClub).forEach(clubId => {
+                    var club = stravaClubs.filter(club => club.strava_club_id === clubId)
+
+                    console.log(`returning ${activitiesByClub[clubId].length} activites for ${club.club_name}`)
+
+                    responseData.push({
+                        club: club.club_name,
+                        activities: activitiesByClub[clubId]
+                    });
+
+                })
+
+                if (req.query.csv === 'true') {
+                    var a = responseData.map(function (club) {
+                        return club.activities.map(function (activity) {
+                            return {club: club.club, activity}
+                        })
+                    });
+                    returnCSVPayload(res, _.flatten(a));
+                }
+                else {
+                    res.header("Content-Type", "application/json; charset=utf-8");
+                    res.json(responseData);
+                }
+            })
+        })
     });
 
+
     function getActivitiesForClub(club, callback) {
-        console.log("Calling strava for club " + club.name + "(" + club.strava_id + ")");
-        strava.clubs.listActivities({id: club.strava_id, per_page: 2}, function (err, payload) {
+        console.log("Calling strava for club " + club.name + "(" + club.id + ")");
+        strava.clubs.listActivities({id: club.id, per_page: 200}, function (err, payload) {
             if (err) {
                 res.statusCode(500)
                 throw new Error(err);
@@ -87,20 +102,17 @@ exports.activities = function (req, res, next) {
 
     function saveNewActivites(club, activities) {
         activities.forEach(activity => {
-            Activity.count({strava_club_id: club.strava_id, 'strava_activity.id': activity.id}, function (err, count) {
-                if(err) {
+            Activity.count({strava_club_id: club.id, 'strava_activity.id': activity.id}, function (err, count) {
+                if (err) {
                     console.log(`Error checking if activity ${activity.id} already exists`);
                 }
-                if(count > 1 ) {
+                if (count > 1) {
                     console.log(`This is weired, we have more than one document with strava id ${activity.id}`)
                 }
-                if(count === 0) {
+                if (count === 0) {
                     Activity.createActivity(club, activity).save(function (err) {
-                        if(err) {
+                        if (err) {
                             console.log("Error saving activity", err)
-                        }
-                        else {
-                            eventhandler.emit('newActivitySaved');
                         }
                     })
                 }
@@ -108,31 +120,6 @@ exports.activities = function (req, res, next) {
             })
         })
     }
-};
-
-
-var mapActivities = function (stravaData) {
-
-    return _.map(stravaData, function (activity) {
-        //console.log("asfdsdsdfsdf", activity)
-        var stravaActivity = activity.strava_activity
-        console.log("saaaa", stravaActivity)
-        return {
-            athlete: {
-                athlete_name: stravaActivity.athlete.firstname + " " + stravaActivity.athlete.lastname,
-                athlete_sex: stravaActivity.athlete.sex,
-                athlete_picture: stravaActivity.athlete.profile
-            },
-            type: stravaActivity.type,
-            distance: stravaActivity.distance,
-            moving_time: stravaActivity.moving_time,
-            elapsed_time: stravaActivity.elapsed_time,
-            total_elevation_gain: stravaActivity.total_elevation_gain,
-            start_date_local: stravaActivity.start_date_local,
-            kilojoules: stravaActivity.kilojoules,
-            kudos_count: stravaActivity.kudos_count
-        }
-    })
 };
 
 
@@ -172,8 +159,8 @@ var returnCSVPayload = function (res, activities) {
     });
 };
 
-
-class EventHandler extends EventEmitter {}
+class EventHandler extends EventEmitter {
+}
 
 var newActivities = 0;
 
@@ -182,7 +169,3 @@ eventhandler.on('newActivitySaved', () => {
     newActivities++;
 });
 
-eventhandler.on('stravaApiCallsDone', () => {
-    console.log(`found ${newActivities} in strava, saved to local db`)
-    newActivities = 0;
-});
