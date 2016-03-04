@@ -2,9 +2,16 @@ var express = require('express');
 var bodyParser = require('body-parser');
 var dexter = require('morgan');
 var config = require('./backend/config/config');
+var stravaService = require('./backend/controllers/strava-service')
 var mongoose = require('mongoose');
 var http = require('http');
 var app = express();
+
+const FIVE_MINUTES=600000
+
+var runStravaService = function() {
+    setInterval(stravaService.getNewStravaActivities, FIVE_MINUTES)
+}
 
 var cors = function (req, res, next) {
     res.setHeader("Access-Control-Allow-Origin", "*");
@@ -41,6 +48,8 @@ var errorHandler = function (err, req, res, next) {
 //mongoose.connect(config.dbUrl);
 //logger.log("Using MongoDB URL", config.dbUrl);
 
+console.log(`mongo time ${config.dbUser}@${config.dbUrl}`)
+
 var connectWithRetry = function() {
     return mongoose.connect(config.dbUrl, {user: config.dbUser, pass: config.dbPassword}, function(err) {
         if (err) {
@@ -71,3 +80,4 @@ httpServer.listen(port, host, function () {
 });
 
 module.exports = app;
+runStravaService();

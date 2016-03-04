@@ -4,9 +4,9 @@ var path = require('path'),
 var config = {
     root: rootPath,
     //:qport: process.env['PORT'] || 6969,
-    dbUrl: process.env['db_url'] || "mongodb://localhost/deploy_log",
-    dbUser: process.env['db_username'] || "admin",
-    dbPassword: process.env['db_password'] || "<hemmelig>",
+    dbUrl: process.env['db_url'] || "mongodb://localhost/autostrada",
+    dbUser: process.env['db_username'],
+    dbPassword: process.env['db_password'],
 }
 
 module.exports = config
