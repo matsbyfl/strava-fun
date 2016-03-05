@@ -22,4 +22,4 @@ activitySchema.statics.createActivity = function (club, activity) {
     })
 }
 
-module.exports = Activity = mongoose.model('Activity', activitySchema);
+module.exports = mongoose.model('Activity', activitySchema);
