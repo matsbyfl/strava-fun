@@ -7,12 +7,12 @@ var activitySchema = new Schema({
     strava_activity: Schema.Types.Mixed
 });
 
-//eventSchema.set('toJSON', {
-//    getters: true, transform: function (doc, ret, options) {
-//        delete ret.__v;
-//        delete ret._id;
-//    }
-//});
+activitySchema.set('toJSON', {
+    getters: true, transform: function (doc, ret, options) {
+        delete ret.__v;
+        delete ret._id;
+    }
+});
 
 activitySchema.statics.createActivity = function (club, activity) {
     return new Activity({

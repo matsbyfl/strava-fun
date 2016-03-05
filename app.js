@@ -7,7 +7,7 @@ var mongoose = require('mongoose');
 var http = require('http');
 var app = express();
 
-const FIVE_MINUTES=600000
+const FIVE_MINUTES=300000
 
 var runStravaService = function() {
     setInterval(stravaService.getNewStravaActivities, FIVE_MINUTES)
@@ -44,9 +44,6 @@ var errorHandler = function (err, req, res, next) {
         message: err.message || "internal error"
     });
 };
-
-//mongoose.connect(config.dbUrl);
-//logger.log("Using MongoDB URL", config.dbUrl);
 
 console.log(`mongo time ${config.dbUser}@${config.dbUrl}`)
 
