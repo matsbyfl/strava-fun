@@ -38,7 +38,6 @@ exports.activities = function (req, res, next) {
 var returnCSVPayload = function (res, activities) {
 
     var createCSVMapping = function (activities) {
-        console.log(activities)
         var createMappingObject = function(item) {
             var mappingObjectArray = []
             for( var key in item) {
