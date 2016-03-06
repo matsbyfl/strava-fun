@@ -48,7 +48,6 @@ var errorHandler = function (err, req, res, next) {
 console.log(`mongo time ${config.dbUser}@${config.dbUrl}`)
 console.error(`mongo time ${config.dbUser}@${config.dbUrl}`)
 
-
 var connectWithRetry = function() {
     return mongoose.connect(config.dbUrl, {user: config.dbUser, pass: config.dbPassword}, function(err) {
         if (err) {
