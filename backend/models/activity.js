@@ -21,5 +21,5 @@ activitySchema.statics.createActivity = function (club, activity) {
         strava_activity: activity
     })
 }
-
-module.exports = mongoose.model('Activity', activitySchema);
+var Activity = mongoose.model('Activity', activitySchema);
+module.exports = Activity
