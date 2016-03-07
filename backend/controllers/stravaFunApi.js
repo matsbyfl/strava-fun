@@ -18,11 +18,9 @@ exports.activities = function (req, res, next) {
             throw new Error(err);
         }
 
-
         if (req.query.csv === 'true') {
 
             var flattened = activities.map( activity => {
-                activity.strava_activity = _.omit(activity.strava_activity, ['start_latlng', 'end_latlng', 'map'])
                 return flatten(activity.toJSON(), {delimiter: '_'})
             })
 
@@ -49,7 +47,6 @@ var returnCSVPayload = function (res, activities) {
     }
 
     jsonToCSV.csvBuffered(activities, createCSVMapping(activities), function (err, csv) {
-        //console.log(csv)
         if (err) {
             res.statusCode = 500;
             throw new Error(err);
