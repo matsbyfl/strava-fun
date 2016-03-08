@@ -5,6 +5,7 @@ var jsonToCSV = require('json-csv');
 var _ = require('lodash');
 var Activity = require('../models/activity');
 var flatten = require('flat')
+var moment = require('moment')
 
 exports.health = function (req, res, next) {
     res.writeHead(200);
@@ -12,14 +13,19 @@ exports.health = function (req, res, next) {
 };
 
 exports.activities = function (req, res, next) {
-    Activity.find({}, (err, activities) => {
+    var predicate = {}
+
+    if(req.query.last) {
+        predicate = {'strava_activity.start_date_local': toTimePredicate(req.query.last)}
+    } 
+
+    Activity.find(predicate, (err, activities) => {
         if (err) {
             res.statusCode(500)
             throw new Error(err);
         }
 
         if (req.query.csv === 'true') {
-
             var flattened = activities.map( activity => {
                 return flatten(activity.toJSON(), {delimiter: '_'})
             })
@@ -32,6 +38,19 @@ exports.activities = function (req, res, next) {
         }
     })
 };
+
+var toTimePredicate = function(momentValue){
+    const timespanpattern = /(^[0-9]+)([a-zA-Z]+$)/
+
+    if(timespanpattern.test(momentValue)) {
+        var matches = momentValue.match(timespanpattern)
+        var quantity = matches[1]
+        var timeUnit = matches[2]
+        return {"$gte": moment().subtract(quantity, timeUnit).format()}
+    } else {
+        throw new Error("Invalid format parameter for 'last'. Format should be <number><period>, e.g. 7days")
+    }
+}
 
 var returnCSVPayload = function (res, activities) {
 
