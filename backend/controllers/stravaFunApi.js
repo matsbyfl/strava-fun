@@ -24,8 +24,6 @@ exports.getUniqActivities = function(req, res, next) {
             return activity.strava_activity.id
          }).map(activity => _.omit(activity.toJSON(), ["strava_club_id", "club_name"])).value();
 
-         console.log(`pre  ${activities.length} post ${uniqActivities.length}`)
-
          if (req.query.csv === 'true') {
               var flattened = uniqActivities.map( activity => {
                   return flatten(activity, {delimiter: '_'})
@@ -105,8 +103,6 @@ var returnCSVPayload = function (res, activities) {
         }
         return {fields: createMappingObject(activities[0])}
     }
-
-    console.log("actttt", activities.length)
 
     if(activities.length === 0) {
         res.header("Content-Type", "text/plain; charset=utf-8");
