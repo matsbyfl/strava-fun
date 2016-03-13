@@ -4,5 +4,6 @@ module.exports = function(app) {
     var validate = require('express-validation')
 
     app.get('/health', stravaFunApi.health)
-    app.get('/api/v1/activities', validate(autostradaValidations), stravaFunApi.activities)
+    app.get('/api/v1/activities', stravaFunApi.activities)
+    app.get('/api/v1/activities/uniq', stravaFunApi.getUniqActivities)
 }

@@ -12,12 +12,53 @@ exports.health = function (req, res, next) {
     res.end();
 };
 
+exports.getUniqActivities = function(req, res, next) {
+    getActivities(req.query, function(err, activities) {
+        if(err) {
+             res.statusCode(500)
+             throw new Error(err);
+         }
+
+         var uniqActivities = _.chain(activities).
+         uniq(activity => {
+            return activity.strava_activity.id
+         }).map(activity => _.omit(activity.toJSON(), ["strava_club_id", "club_name"])).value();
+
+         console.log(`pre  ${activities.length} post ${uniqActivities.length}`)
+
+         if (req.query.csv === 'true') {
+              var flattened = uniqActivities.map( activity => {
+                  return flatten(activity, {delimiter: '_'})
+              })
+
+              returnCSVPayload(res, flattened)
+          }
+          else {
+            res.header("Content-Type", "application/json; charset=utf-8");
+            res.json(uniqActivities);
+          }
+         
+    });
+}; 
+
+const getActivities = function(queryParams, callback) {
+    var predicate = {}
+
+    if(queryParams.last) {
+        predicate = {'strava_activity.start_date_local': toTimePredicate(queryParams.last)}
+    } 
+
+
+    Activity.find(predicate, callback);
+}
+
 exports.activities = function (req, res, next) {
     var predicate = {}
 
     if(req.query.last) {
         predicate = {'strava_activity.start_date_local': toTimePredicate(req.query.last)}
     } 
+
 
     Activity.find(predicate, (err, activities) => {
         if (err) {
@@ -65,13 +106,22 @@ var returnCSVPayload = function (res, activities) {
         return {fields: createMappingObject(activities[0])}
     }
 
-    jsonToCSV.csvBuffered(activities, createCSVMapping(activities), function (err, csv) {
-        if (err) {
-            res.statusCode = 500;
-            throw new Error(err);
-        }
+    console.log("actttt", activities.length)
+
+    if(activities.length === 0) {
         res.header("Content-Type", "text/plain; charset=utf-8");
-        res.write(csv);
-        res.send();
-    });
+        res.statusCode = 404;
+        res.send()
+    }
+    else {
+        jsonToCSV.csvBuffered(activities, createCSVMapping(activities), function (err, csv) {
+            if (err) {
+                res.statusCode = 500;
+                throw new Error(err);
+            }
+            res.header("Content-Type", "text/plain; charset=utf-8");
+            res.write(csv);
+            res.send();
+        });
+    }
 };

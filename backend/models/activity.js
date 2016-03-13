@@ -18,7 +18,7 @@ activitySchema.set('toJSON', {
 });
 
 activitySchema.statics.createActivity = function (club, activity) {
-    var pluckedActivity = _.omit(activity, ['start_latlng', 'end_latlng', 'map', 'start_latitude', 'start_longitude', ])
+    var pluckedActivity = _.omit(activity, ['start_latlng', 'end_latlng', 'map', 'start_latitude', 'start_longitude' ])
 
     return new Activity({
         strava_club_id: club.id,
