@@ -9,7 +9,8 @@ const STRAVA_API_MAX_ACTIVITIES = 200;
 exports.getNewStravaActivities = function () {
 
     var asyncTasks = [];
-    var total = 0;
+    var totalNew = 0;
+    var totalUpdated = 0;
 
     getClubs(function (clubs) {
         clubs.forEach(function (club) {
@@ -19,7 +20,7 @@ exports.getNewStravaActivities = function () {
         })
 
         async.parallel(asyncTasks, function () {
-            console.log(`\nStrava sync complete, saved ${total} new activities`)
+            console.log(`\nStrava sync complete, ${totalNew} new  and ${totalUpdated} updated activities`)
         });
     })
 
@@ -48,47 +49,43 @@ exports.getNewStravaActivities = function () {
     function saveNewActivites(club, activities, callback) {
 
         var newActivities = 0;
+        var updatedActivities = 0;
 
         if (activities.length === 0) {
-            console.log("No new activities for club " + club.name)
+            console.log("No activities for club " + club.name)
             callback();
         }
 
-        async.each(activities, saveActivityIfNew, doStuff)
+        async.each(activities, removeAndCreate, logSummary)
 
-        function saveActivityIfNew(activity, cb) {
-            activityExists(club, activity, function (alreadySaved) {
-                if (!alreadySaved) {
-                    newActivities = newActivities + 1;
-                    Activity.createActivity(club, activity).save(function (err) {
-                        if (err) {
-                            console.log("Error saving activity", err)
-                        }
-                    })
+        function removeAndCreate(activity, cb) {
+            Activity.remove({strava_club_id: club.id, 'strava_activity.id': activity.id}, function(err, removedCount) {
+                if(err) {
+                    console.log('Error when trying to remove activity ${activity.id}', activity.id, err)
+                    cb();
                 }
-                cb()
+                
+                if(removedCount > 0) {
+                    updatedActivities++
+                }
+                else {
+                    newActivities++
+                }   
+                
+                Activity.createActivity(club, activity).save(function (err) {
+                    if (err) {
+                         console.log("Error saving new activity", err)
+                    }
+                    cb();
+                })
             })
         }
 
-        function doStuff() {
-            console.log(`saved ${newActivities} new activities for ${club.name}(${club.id})`)
-            total = total + newActivities
+        function logSummary() {
+            console.log(`saved ${newActivities} new activities and updated ${updatedActivities} for ${club.name}(${club.id})`)
+            totalNew = totalNew + newActivities
+            totalUpdated = totalUpdated + updatedActivities
             callback();
         }
-    }
-
-    function activityExists(club, activity, callback) {
-        Activity.count({strava_club_id: club.id, 'strava_activity.id': activity.id}, function (err, count) {
-            if (err) {
-                console.log(`Error checking if activity ${activity.id} already exists`, err);
-                callback(true)
-            }
-            if (count === 1) {
-                callback(true)
-            }
-            if (count === 0) {
-                callback(false)
-            }
-        })
     }
 }
