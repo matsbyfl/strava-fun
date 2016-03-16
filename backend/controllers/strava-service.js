@@ -3,8 +3,38 @@
 var async = require('async');
 var strava = require('strava-v3');
 var Activity = require('../models/activity');
+var _ = require('lodash')
 
 const STRAVA_API_MAX_ACTIVITIES = 200;
+
+// exports.checkDeletedActivities = function() {
+//     console.log("Starting cleanup service for removing deleted strava activities")
+//     Activity.find({}, function(err, activities) {
+//         const MAX_API_CALLS = 400;
+//         const activityIds = _.uniq(activities, activity => activity.strava_activity.id).map(activity => activity.strava_activity.id)
+//         console.log("got " + activityIds.length + " activities. Devision " + activityIds.length / MAX_API_CALLS)
+//         //console.log(activityIds)
+//         const slicecount = Math.ceil(activityIds.length / MAX_API_CALLS)
+//         console.log(`Found ${activityIds.length} uniq activities. Splitting into ${slicecount} to not blow up strava api limitations`)
+
+//         var slices = []
+
+//         for(let i = 0; i < slicecount; i++) {
+//             const startSlice = MAX_API_CALLS * i
+//             const endSlice = MAX_API_CALLS * i + MAX_API_CALLS
+//             var sliced = _.slice(activityIds, startSlice, endSlice)
+//             slices.push(sliced)
+//         }
+//         console.log("sliced the shit")
+//         slices.forEach(a => console.log(a.length))
+
+//         var fjes = slices[0][0]
+//         console.log("fjes", fjes)
+//         strava.activities.
+//     })
+// }
+
+//function deleteFromMongoIfNotInStrava(activitiesId)
 
 exports.getNewStravaActivities = function () {
 
