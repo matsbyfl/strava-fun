@@ -4,6 +4,7 @@ var async = require('async');
 var strava = require('strava-v3');
 var Activity = require('../models/activity');
 var _ = require('lodash')
+var moment = require('moment')
 
 const STRAVA_API_MAX_ACTIVITIES = 200;
 
@@ -37,10 +38,10 @@ const STRAVA_API_MAX_ACTIVITIES = 200;
 //function deleteFromMongoIfNotInStrava(activitiesId)
 
 exports.getNewStravaActivities = function () {
-
     var asyncTasks = [];
-    var totalNew = 0;
-    var totalUpdated = 0;
+    var activityCounter = 0;
+    var stravaActivites = [];
+    var updatedActivities = 0;
 
     getClubs(function (clubs) {
         clubs.forEach(function (club) {
@@ -50,7 +51,8 @@ exports.getNewStravaActivities = function () {
         })
 
         async.parallel(asyncTasks, function () {
-            console.log(`\nStrava sync complete, ${totalNew} new  and ${totalUpdated} updated activities`)
+            console.log(`Done calling Strava api got a totalt of ${activityCounter} activities`)
+            removeFromMongo(saveStravaActivities)
         });
     })
 
@@ -72,50 +74,48 @@ exports.getNewStravaActivities = function () {
                 throw new Error(err);
             }
 
-            saveNewActivites(club, payload, callback);
+            var act = payload.map(payloadElement => createActivity(club, payloadElement))
+            stravaActivites.push(act)
+            console.log(`Got ${payload.length} activities for ${club.name}`)
+            activityCounter = activityCounter + payload.length
+            callback()
         })
     }
 
-    function saveNewActivites(club, activities, callback) {
+    function createActivity(club, activity) {
+        var pluckedActivity = _.omit(activity, ['start_latlng', 'end_latlng', 'map', 'start_latitude', 'start_longitude' ])
 
-        var newActivities = 0;
-        var updatedActivities = 0;
-
-        if (activities.length === 0) {
-            console.log("No activities for club " + club.name)
-            callback();
+        return {
+            strava_club_id: club.id,
+            club_name: club.name,
+            activity_date: moment(pluckedActivity.start_date_local).format('YYYY-MM-DD'),
+            strava_activity: pluckedActivity
         }
+    }
 
-        async.each(activities, removeAndCreate, logSummary)
+    function removeFromMongo(callback) {
+        
+        const uniqueActivityIds = _.chain(stravaActivites).flatten().map(stravaActivity => stravaActivity.strava_activity.id).uniq().value()
+        console.log(`Trying to remove existing ${activityCounter} activities from Mongo`)
 
-        function removeAndCreate(activity, cb) {
-            Activity.remove({strava_club_id: club.id, 'strava_activity.id': activity.id}, function(err, removedCount) {
-                if(err) {
-                    console.log('Error when trying to remove activity ${activity.id}', activity.id, err)
-                    cb();
-                }
-                
-                if(removedCount > 0) {
-                    updatedActivities++
-                }
-                else {
-                    newActivities++
-                }   
-                
-                Activity.createActivity(club, activity).save(function (err) {
-                    if (err) {
-                         console.log("Error saving new activity", err)
-                    }
-                    cb();
-                })
-            })
-        }
+        Activity.remove({'strava_activity.id': {$in: uniqueActivityIds }}, function(err, removedCount) {
+            if(err) {
+                console.error("Error removing activities from mongo", err)
+                return
+            }
+            updatedActivities = removedCount 
+            console.info( "successfully removed ", removedCount)
+            callback()
+        })
+    }
 
-        function logSummary() {
-            console.log(`saved ${newActivities} new activities and updated ${updatedActivities} for ${club.name}(${club.id})`)
-            totalNew = totalNew + newActivities
-            totalUpdated = totalUpdated + updatedActivities
-            callback();
-        }
+    function saveStravaActivities() {
+        Activity.collection.insert(_.flatten(stravaActivites), (err, activities) => {
+            if(err) {
+                console.error("shit hit the fan when batch inserting activities", err)
+                return 
+            }
+            console.info(`successfully saved ${activities.length} activities. Thats ${activities.length - updatedActivities} new since last time`)
+        })
     }
 }

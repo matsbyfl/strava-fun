@@ -13,11 +13,12 @@ const SIX_HOURS = 21600000
 
 var runStravaService = function() {
     setInterval(stravaService.getNewStravaActivities, TWENTY_MINUTES)
+    //stravaService.getNewStravaActivities()
 }
 
 var runCleanup = function() {
     //setInterval(stravaService.checkDeletedActivities, SIX_HOURS)
-    stravaService.checkDeletedActivities()
+    //stravaService.checkDeletedActivities()
 }
 
 var cors = function (req, res, next) {

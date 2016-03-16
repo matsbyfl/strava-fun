@@ -17,15 +17,5 @@ activitySchema.set('toJSON', {
     }
 });
 
-activitySchema.statics.createActivity = function (club, activity) {
-    var pluckedActivity = _.omit(activity, ['start_latlng', 'end_latlng', 'map', 'start_latitude', 'start_longitude' ])
-
-    return new Activity({
-        strava_club_id: club.id,
-        club_name: club.name,
-        activity_date: moment(pluckedActivity.start_date_local).format('YYYY-MM-DD'),
-        strava_activity: pluckedActivity
-    })
-}
 var Activity = mongoose.model('Activity', activitySchema);
 module.exports = Activity
