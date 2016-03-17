@@ -24,6 +24,7 @@
     "express": "4.4.5",
     "express-validation": "^0.5.0",
     "flat": "^2.0.0",
+    "fs": "0.0.2",
     "joi": "^8.0.4",
     "json-csv": "^1.2.0",
     "lodash": "^3.10.1",

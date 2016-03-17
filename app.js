@@ -7,17 +7,17 @@ var mongoose = require('mongoose');
 var http = require('http');
 var app = express();
 
-const FIVE_MINUTES = 300000
-const TWENTY_MINUTES = 1200000
-const SIX_HOURS = 21600000
+//const FIVE_MINUTES = 300000
+const FIFTEEN_MINUTES = 900000
+const TWELWE_HOURS = 43200000
 
 var runStravaService = function() {
-    setInterval(stravaService.getNewStravaActivities, TWENTY_MINUTES)
+    setInterval(stravaService.getNewStravaActivities, FIFTEEN_MINUTES)
     //stravaService.getNewStravaActivities()
 }
 
 var runCleanup = function() {
-    //setInterval(stravaService.checkDeletedActivities, SIX_HOURS)
+    setInterval(stravaService.checkDeletedActivities, TWELWE_HOURS)
     //stravaService.checkDeletedActivities()
 }
 
@@ -87,4 +87,4 @@ httpServer.listen(port, host, function () {
 
 module.exports = app;
 runStravaService();
-//runCleanup();
+runCleanup();
