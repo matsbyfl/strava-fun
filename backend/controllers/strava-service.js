@@ -48,7 +48,7 @@ exports.checkDeletedActivities = function() {
                             console.error("error removing activity " + actid + " from mongo")
                         } else {
                             deleted++;
-                            console.info("successfully removed " + affected + " activit[y|ies] that a user deleted from strava")
+                            console.info("successfully removed " + affected + " activit[y|ies] for id " + actid + " that a user deleted from strava")
                             return done()
                         }
                     })
