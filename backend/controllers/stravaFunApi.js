@@ -29,7 +29,7 @@ exports.getUniqActivities = function(req, res, next) {
                   return flatten(activity, {delimiter: '_'})
               })
 
-              returnCSVPayload(res, flattened)
+            returnCSVPayload(res, flattened, req.query.csvfields)
           }
           else {
             res.header("Content-Type", "application/json; charset=utf-8");
@@ -59,6 +59,7 @@ exports.activities = function (req, res, next) {
 
 
     Activity.find(predicate, (err, activities) => {
+        
         if (err) {
             res.statusCode(500)
             throw new Error(err);
@@ -69,7 +70,7 @@ exports.activities = function (req, res, next) {
                 return flatten(activity.toJSON(), {delimiter: '_'})
             })
 
-            returnCSVPayload(res, flattened)
+            returnCSVPayload(res, flattened, req.query.csvfields)
         }
         else {
             res.header("Content-Type", "application/json; charset=utf-8");
@@ -91,7 +92,7 @@ var toTimePredicate = function(momentValue){
     }
 }
 
-var returnCSVPayload = function (res, activities) {
+var returnCSVPayload = function (res, activities, csvfields) {
 
     var createCSVMapping = function (activities) {
         var createMappingObject = function(item) {
@@ -110,7 +111,18 @@ var returnCSVPayload = function (res, activities) {
         res.send()
     }
     else {
-        jsonToCSV.csvBuffered(activities, createCSVMapping(activities), function (err, csv) {
+
+        var filteredFields = activities;
+        if(csvfields) {
+            const fields = csvfields.split(',')
+
+            filteredFields = activities.map(activity => {
+                return _.pick(activity, fields)
+            })
+        }
+
+
+        jsonToCSV.csvBuffered(filteredFields, createCSVMapping(filteredFields), function (err, csv) {
             if (err) {
                 res.statusCode = 500;
                 throw new Error(err);
