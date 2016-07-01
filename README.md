@@ -16,3 +16,10 @@
 4. Oppretter og pusher et nytt docker image til docker.adeo.no (image tag = docker.adeo.no:5000/vera:<versjon>)
 5. Deployer denne til cd-u1 miljøet
 6. Kjører tester
+
+Admin stuff
+Mongo kan ese ut noen ganger pga preallokering av filer. 
+Dette kan løses ved å logge på rch instansen, fyre opp mongo og kjøre db.use autostrada også db.repairDatabase()
+
+Quota kan sjekkes ved å kjøre: 
+rhc app-show autostrada --gears quota
