@@ -1,4 +1,4 @@
-oFROM centos:7
+FROM centos:7
 MAINTAINER Johnny Horvi <johnny.horvi@nav.no>
 
 COPY nodejs /tmp/nodejs

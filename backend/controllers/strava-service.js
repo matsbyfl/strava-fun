@@ -118,7 +118,6 @@ exports.getNewStravaActivities = function () {
             strava_club_id: club.id,
             club_name: club.name,
             activity_date: moment(pluckedActivity.start_date_local).format('YYYY-MM-DD'),
-            met_score: calculateMetScore(pluckedActivity),
             strava_activity: pluckedActivity
         }
     }
