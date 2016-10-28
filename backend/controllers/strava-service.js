@@ -16,7 +16,7 @@ exports.checkDeletedActivities = function() {
         const MAX_API_CALLS = 400;
         const activityIds = _.uniq(activities, activity => activity.strava_activity.id).map(activity => activity.strava_activity.id)
         const slicecount = Math.ceil(activityIds.length / MAX_API_CALLS)
-        
+
         console.info(`Found ${activityIds.length} uniq activities. Splitting into ${slicecount} slices to not blow up strava api limitations`)
 
         var slices = []
@@ -118,12 +118,14 @@ exports.getNewStravaActivities = function () {
             strava_club_id: club.id,
             club_name: club.name,
             activity_date: moment(pluckedActivity.start_date_local).format('YYYY-MM-DD'),
+            met_score: calculateMetScore(pluckedActivity),
             strava_activity: pluckedActivity
         }
     }
 
+
     function removeFromMongo(callback) {
-        
+
         const uniqueActivityIds = _.chain(stravaActivites).flatten().map(stravaActivity => stravaActivity.strava_activity.id).uniq().value()
         console.log(`Trying to remove existing ${activityCounter} activities from Mongo`)
 
@@ -132,7 +134,7 @@ exports.getNewStravaActivities = function () {
                 console.error("Error removing activities from mongo", err)
                 return
             }
-            updatedActivities = removedCount 
+            updatedActivities = removedCount
             console.info( "successfully removed ", removedCount)
             callback()
         })
@@ -142,7 +144,7 @@ exports.getNewStravaActivities = function () {
         Activity.collection.insert(_.flatten(stravaActivites), (err, activities) => {
             if(err) {
                 console.error("shit hit the fan when batch inserting activities", err)
-                return 
+                return
             }
             console.info(`successfully saved ${activities.length} activities. Thats ${activities.length - updatedActivities} new since last time`)
         })

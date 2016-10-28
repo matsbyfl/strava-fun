@@ -4,6 +4,7 @@ var config = require("../config/config");
 var jsonToCSV = require('json-csv');
 var _ = require('lodash');
 var Activity = require('../models/activity');
+var metMapping = require("../config/metTable")
 var flatten = require('flat')
 var moment = require('moment')
 
@@ -13,16 +14,12 @@ exports.health = function (req, res, next) {
 };
 
 exports.getUniqActivities = function(req, res, next) {
-    getActivities(req.query, function(err, activities) {
-        if(err) {
-             res.statusCode(500)
-             throw new Error(err);
-         }
-
+    getActivities(req.query, function(activities) {
          var uniqActivities = _.chain(activities).
          uniq(activity => {
             return activity.strava_activity.id
-         }).map(activity => _.omit(activity.toJSON(), ["strava_club_id", "club_name"])).value();
+         }).map(activity => _.omit(activity, ["strava_club_id", "club_name"])).value();
+
 
          if (req.query.csv === 'true') {
               var flattened = uniqActivities.map( activity => {
@@ -35,49 +32,76 @@ exports.getUniqActivities = function(req, res, next) {
             res.header("Content-Type", "application/json; charset=utf-8");
             res.json(uniqActivities);
           }
-         
+
     });
-}; 
+};
 
 const getActivities = function(queryParams, callback) {
     var predicate = {}
 
     if(queryParams.last) {
         predicate = {'strava_activity.start_date_local': toTimePredicate(queryParams.last)}
-    } 
+    }
+
+    Activity.find(predicate, function(err, activities) {
+      if(err) {
+           res.statusCode(500)
+           throw new Error(err);
+       }
+
+       var metScoreEnrichedActivities = activities.map(activity => {
+         var a = activity.toJSON()
+         a.metscore = calculateMetScore(activity.strava_activity)
+         return a
+       })
+       callback(metScoreEnrichedActivities)
+    });
+}
+
+function calculateMetScore(activity) {
+  const SECONDS_IN_HOUR = 3600
+  const DEFAULT_MET_VALUE = 7
+
+  const movingTimeInSeconds = activity.moving_time
+  const type = activity.type.toLowerCase()
+  const distance = activity.distance
+  const kmh = Math.round((distance/movingTimeInSeconds)* 3.6 )
+
+  let metScore
+
+  if(!metMapping[type] || distance === 0) {
+    metScore =  movingTimeInSeconds/SECONDS_IN_HOUR * DEFAULT_MET_VALUE
+  } else {
+    metScore = metMapping[type][kmh] * movingTimeInSeconds / SECONDS_IN_HOUR
+  }
+
+  metScore = round(metScore, 1)
+  return metScore
+}
 
 
-    Activity.find(predicate, callback);
+function round(value, precision) {
+    var multiplier = Math.pow(10, precision || 0);
+    return Math.round(value * multiplier) / multiplier;
 }
 
 exports.activities = function (req, res, next) {
     var predicate = {}
 
-    if(req.query.last) {
-        predicate = {'strava_activity.start_date_local': toTimePredicate(req.query.last)}
-    } 
+    getActivities(req.query, function(activities) {
+      if (req.query.csv === 'true') {
+          var flattened = activities.map( activity => {
+              return flatten(activity, {delimiter: '_'})
+          })
 
-
-    Activity.find(predicate, (err, activities) => {
-        
-        if (err) {
-            res.statusCode(500)
-            throw new Error(err);
-        }
-
-        if (req.query.csv === 'true') {
-            var flattened = activities.map( activity => {
-                return flatten(activity.toJSON(), {delimiter: '_'})
-            })
-
-            returnCSVPayload(res, flattened, req.query.csvfields)
-        }
-        else {
-            res.header("Content-Type", "application/json; charset=utf-8");
-            res.json(activities);
-        }
+          returnCSVPayload(res, flattened, req.query.csvfields)
+      }
+      else {
+          res.header("Content-Type", "application/json; charset=utf-8");
+          res.json(activities);
+      }
     })
-};
+  }
 
 var toTimePredicate = function(momentValue){
     const timespanpattern = /(^[0-9]+)([a-zA-Z]+$)/
