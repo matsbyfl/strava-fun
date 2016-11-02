@@ -61,6 +61,7 @@ const getActivities = function(queryParams, callback) {
 function calculateMetScore(activity) {
   const SECONDS_IN_HOUR = 3600
   const DEFAULT_MET_VALUE = 7
+  const TWENTYFOUR_HOURS = SECONDS_IN_HOUR * 24
 
   const movingTimeInSeconds = activity.moving_time
   const type = activity.type.toLowerCase()
@@ -69,9 +70,14 @@ function calculateMetScore(activity) {
 
   let metScore
 
-  if(!metMapping[type] || distance === 0) {
+  if(movingTimeInSeconds > TWENTYFOUR_HOURS ) {
+    console.log("Found activity with duration more than 24 hrs. No MET score for you! Activity id  " +  activity.id)
+    metScore = 0
+  }
+  else if(!metMapping[type] || distance === 0) {
     metScore =  movingTimeInSeconds/SECONDS_IN_HOUR * DEFAULT_MET_VALUE
-  } else {
+  }
+  else {
     metScore = metMapping[type][kmh] * movingTimeInSeconds / SECONDS_IN_HOUR
   }
 
